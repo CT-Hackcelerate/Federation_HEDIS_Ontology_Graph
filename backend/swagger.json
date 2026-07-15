@@ -1,0 +1,215 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Clinical Decision Support API",
+    "description": "CDS Hooks 2.0 compliant Clinical Decision Support API for EHR integration. Note: HTTP failure codes are suppressed by design for this internal POC; all errors return FHIR-compliant empty cards responses.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "API information and available endpoints",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": { "type": "string" },
+                    "version": { "type": "string" },
+                    "description": { "type": "string" },
+                    "endpoints": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Root"]
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns current service status for load balancers and monitoring",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          }
+        },
+        "tags": ["Health"]
+      }
+    },
+    "/cds-services": {
+      "get": {
+        "summary": "Discover Services",
+        "description": "CDS Hooks Discovery Endpoint. Returns available CDS services per specification.",
+        "operationId": "discover_services_cds_services_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CDSServiceDiscoveryResponse" }
+              }
+            }
+          }
+        },
+        "tags": ["CDS Services"]
+      }
+    },
+    "/cds-services/{service_id}": {
+      "post": {
+        "summary": "Invoke Service",
+        "description": "CDS Hooks Service Invocation. Accepts hook request and returns decision support cards.",
+        "operationId": "invoke_service_cds_services__service_id__post",
+        "parameters": [
+          {
+            "name": "service_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CDSHookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CDSHookResponse" }
+              }
+            }
+          },
+          "401": { "description": "Authentication required" },
+          "404": { "description": "Service not found" },
+          "422": { "description": "Validation Error" }
+        },
+        "security": [
+          { "APIKeyHeader": [] },
+          { "HTTPBearer": [] }
+        ],
+        "tags": ["CDS Services"]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "timestamp", "version"],
+        "properties": {
+          "status": { "type": "string", "example": "healthy" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "version": { "type": "string", "example": "1.0.0" }
+        }
+      },
+      "CDSService": {
+        "type": "object",
+        "required": ["hook", "id", "title", "description"],
+        "properties": {
+          "hook": { "type": "string", "description": "Hook type (e.g., patient-view)" },
+          "id": { "type": "string", "description": "Unique service identifier" },
+          "title": { "type": "string", "description": "Display title" },
+          "description": { "type": "string", "description": "Service description" },
+          "prefetch": { "type": "object", "description": "Prefetch template" }
+        }
+      },
+      "CDSServiceDiscoveryResponse": {
+        "type": "object",
+        "required": ["services"],
+        "properties": {
+          "services": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CDSService" }
+          }
+        }
+      },
+      "CDSHookContext": {
+        "type": "object",
+        "properties": {
+          "patientId": { "type": "string", "description": "Patient ID from EHR" },
+          "userId": { "type": "string", "description": "User ID from EHR" },
+          "encounterId": { "type": "string", "description": "Encounter ID" }
+        }
+      },
+      "CDSHookRequest": {
+        "type": "object",
+        "required": ["hook", "hookInstance", "context"],
+        "properties": {
+          "hook": { "type": "string", "description": "Hook that triggered this request" },
+          "hookInstance": { "type": "string", "format": "uuid", "description": "Unique hook invocation ID" },
+          "context": { "$ref": "#/components/schemas/CDSHookContext" },
+          "prefetch": { "type": "object", "description": "Pre-fetched FHIR resources" },
+          "fhirServer": { "type": "string", "format": "uri", "description": "EHR FHIR server URL" },
+          "fhirAuthorization": { "type": "object", "description": "OAuth2 token for FHIR access" }
+        }
+      },
+      "CDSSource": {
+        "type": "object",
+        "required": ["label"],
+        "properties": {
+          "label": { "type": "string", "description": "Source display label" },
+          "url": { "type": "string", "format": "uri" },
+          "icon": { "type": "string", "format": "uri" }
+        }
+      },
+      "CDSCard": {
+        "type": "object",
+        "required": ["summary", "indicator", "source"],
+        "properties": {
+          "summary": { "type": "string", "maxLength": 140, "description": "One-line card summary" },
+          "indicator": { "type": "string", "enum": ["info", "warning", "critical"] },
+          "source": { "$ref": "#/components/schemas/CDSSource" },
+          "detail": { "type": "string", "description": "Markdown detail content" },
+          "suggestions": { "type": "array", "items": { "type": "object" } },
+          "links": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "CDSHookResponse": {
+        "type": "object",
+        "required": ["cards"],
+        "properties": {
+          "cards": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CDSCard" },
+            "description": "Array of CDS cards (empty on error)"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      },
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    { "name": "Root", "description": "Root endpoint" },
+    { "name": "Health", "description": "Health check operations" },
+    { "name": "CDS Services", "description": "CDS Hooks service operations" }
+  ]
+}

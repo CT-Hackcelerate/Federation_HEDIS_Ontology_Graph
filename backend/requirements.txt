@@ -1,0 +1,42 @@
+# Core Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+gunicorn>=22.0.0
+
+# Pydantic for validation
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+
+# HTTP client (for future FHIR integration)
+httpx>=0.27.0
+
+# Data processing
+pyarrow>=17.0.0
+pandas>=2.1.0
+
+# PostgreSQL connectivity for Lakebase
+psycopg2-binary>=2.9.0
+
+# Databricks connectivity (optional - for Delta Lake tables)
+# databricks-sql-connector>=4.0.0
+
+# Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Logging
+python-json-logger>=2.0.7
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+
+# Development
+black>=24.0.0
+isort>=5.13.0
+mypy>=1.8.0
+ruff>=0.2.0
+
+# Environment
+python-dotenv>=1.0.0

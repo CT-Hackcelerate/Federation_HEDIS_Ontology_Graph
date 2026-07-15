@@ -1,0 +1,15 @@
+.container {
+  min-height: 100vh;
+  width: 100%;
+  display: block;
+  padding-top: 80px;
+  box-sizing: border-box;
+  background: #f5f6f8;
+}
+
+.pin {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}

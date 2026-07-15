@@ -1,0 +1,24 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+// Redux store to pass down to the React app
+import store from './store/store';
+
+// MUI theme
+import theme from './theme';
+
+// Starting component for the application
+import MainView from './components/MainView/main-view';
+
+const root = createRoot(document.getElementById('root'));
+root.render(
+  <Provider store={store}>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <MainView />
+    </ThemeProvider>
+  </Provider>,
+);
